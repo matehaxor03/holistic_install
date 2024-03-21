@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"fmt"
+	"strings"
 	host_client "github.com/matehaxor03/holistic_host_client/host_client"
 	common "github.com/matehaxor03/holistic_common/common"
 	host_installer "github.com/matehaxor03/holistic_host_init/host_installer"
@@ -52,9 +53,47 @@ func main(){
 		errors = append(errors, database_root_password_errors...)
 	}
 
+
+	database_writer_usernames, database_writer_usernames_errors := host_client.GetEnviornmentVariable(common.ENV_HOLISTIC_DATABASE_WRITER_USERNAMES())
+	if database_writer_usernames_errors != nil {
+		errors = append(errors, database_writer_usernames_errors...)
+	}
+
+	database_reader_usernames, database_reader_usernames_errors := host_client.GetEnviornmentVariable(common.ENV_HOLISTIC_DATABASE_READER_USERNAMES())
+	if database_reader_usernames_errors != nil {
+		errors = append(errors, database_reader_usernames_errors...)
+	}
+
+	database_migration_usernames, database_migration_usernames_errors := host_client.GetEnviornmentVariable(common.ENV_HOLISTIC_DATABASE_MIGRATION_USERNAMES())
+	if database_migration_usernames_errors != nil {
+		errors = append(errors, database_migration_usernames_errors...)
+	}
+
 	if len(errors) > 0 {
 		fmt.Println(fmt.Errorf("%s", errors))
 		os.Exit(1)
+	}
+
+	var database_writer_usernames_array []string
+	var database_reader_usernames_array []string
+	var database_migration_usernames_array []string
+
+	if strings.Contains(*database_writer_usernames, ",") {
+		database_writer_usernames_array = strings.Split(*database_writer_usernames, ",")
+	} else {
+		database_writer_usernames_array = append(database_writer_usernames_array, *database_writer_usernames)
+	}
+
+	if strings.Contains(*database_reader_usernames, ",") {
+		database_reader_usernames_array = strings.Split(*database_reader_usernames, ",")
+	} else {
+		database_reader_usernames_array = append(database_reader_usernames_array, *database_reader_usernames)
+	}
+
+	if strings.Contains(*database_migration_usernames, ",") {
+		database_migration_usernames_array = strings.Split(*database_migration_usernames, ",")
+	} else {
+		database_migration_usernames_array = append(database_migration_usernames_array, *database_migration_usernames)
 	}
 
 	number_of_users, number_of_users_uint64_errors := number_of_users_value.GetUInt64Value()
@@ -77,7 +116,7 @@ func main(){
 		errors = append(errors, host_installer_errors...)
 	}
 
-	database_installer,  database_installer_errors := db_installer.NewDatabaseInstaller(*database_host_name, *database_port_number, *database_name, *database_root_username, *database_root_password)
+	database_installer,  database_installer_errors := db_installer.NewDatabaseInstaller(*database_host_name, *database_port_number, *database_name, *database_root_username, *database_root_password, database_writer_usernames_array, database_reader_usernames_array, database_migration_usernames_array)
 	if database_installer_errors != nil {
 		errors = append(errors, database_installer_errors...)
 	}
